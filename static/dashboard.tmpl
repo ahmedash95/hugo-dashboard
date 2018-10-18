@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Hugo Dashboard - Serving [ {{ .title }} ]</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.5/themes/default/style.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/highlight.js/latest/styles/github.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.css">
+</head>
+<body>
+    <nav class="flex items-center justify-between flex-wrap bg-teal p-6">
+        <div class="flex items-center flex-no-shrink text-white mr-6">
+            <span class="font-semibold text-xl tracking-tight">{{ .title }}</span>
+        </div>
+    </nav>
+
+    <!-- Two columns -->
+    <div class="flex mb-4 h-screen">
+        <div class="w-1/4 bg-grey-light overflow-auto">
+            <div id="files-tree"></div>
+        </div>
+        <div class="w-3/4 bg-grey .leading-normal overflow-auto">
+            <textarea name="" id="editor" cols="30" rows="10"></textarea>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.5/jstree.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/highlight.js/latest/highlight.min.js"></script>
+
+
+    <script>
+        var tree = JSON.parse({{.pages_list}})
+        var dirTree = []
+            ids = [];
+        for(let i=0; i < tree.length; i++) {
+            let f = tree[i];
+            dirs = f.split("/").filter(function(v){ return v != ""; })
+            parent = "#";
+            $.each(dirs,function(i,v){
+                id = dirs.slice(0,i+1)
+                if(ids[id] === undefined) {
+                    icon = ""
+                    if(dirs.length == i+1) {
+                        icon = "#"
+                    }
+                    dirTree.push({ "id" : id, "parent" : parent, "text" : v, "icon" : icon })
+                    ids[id] = 0;
+                }
+                parent = id
+            })
+        }
+        $('#files-tree')
+        .on('select_node.jstree', function (e, data) {
+            if(data.node.children.length > 0) {
+                return
+            }
+            var i, j, r = [];
+            for(i = 0, j = data.selected.length; i < j; i++) {
+            r.push(data.instance.get_node(data.selected[i]).text);
+            }
+            openFile(`/${data.node.parents[0].split(',').join('/')}/${r[0]}`)
+        })
+        .jstree({ 'core' : {
+            "multiple" : false,
+            "animation" : 0,
+            'data' : dirTree
+        } });
+
+
+        var simplemde = new SimpleMDE({
+            element: document.getElementById("editor"),
+            spellChecker: false,
+        });
+
+        // Open speicifc file
+        var openFile = function(path) {
+            $.ajax({
+                url: `/page?p=${path}`,
+                error: function(){
+                    alert('Something went wrong')
+                },
+                success: function(response){
+                    simplemde.value(response.content);
+                }
+            })
+        }
+    </script>
+</body>
+</html>
