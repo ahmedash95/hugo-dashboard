@@ -33,6 +33,7 @@ func main() {
 	router.LoadHTMLGlob("static/*.tmpl")
 	router.GET("/", indexHandler)
 	router.GET("/page", pageHandler)
+	router.POST("/page", savePageHandler)
 	router.Run(fmt.Sprintf(":%s", *port))
 }
 
@@ -75,4 +76,36 @@ func pageHandler(c *gin.Context) {
 		return
 	}
 	c.JSON(200, page)
+}
+
+func savePageHandler(c *gin.Context) {
+	id, defined := c.GetQuery("p")
+
+	if !defined {
+		c.JSON(422, gin.H{
+			"msg": "Parameter p should be defined and contain page path id",
+		})
+		return
+	}
+
+	page, err := hugo.FindPage(id)
+	if err != nil {
+		c.JSON(404, nil)
+		return
+	}
+
+	page_content, _ := c.GetPostForm("content")
+
+	saveErr := page.UpdateContent(page_content)
+
+	if saveErr != nil {
+		c.JSON(422, gin.H{
+			"msg": saveErr,
+		})
+		return
+	}
+
+	c.JSON(200, gin.H{
+		"msg": "changes has been saved succesfully",
+	})
 }

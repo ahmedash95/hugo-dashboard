@@ -75,9 +75,26 @@
         var simplemde = new SimpleMDE({
             element: document.getElementById("editor"),
             spellChecker: false,
+            toolbar: [
+                "bold", "italic", "heading", "|", "quote","image","table","|","preview","side-by-side","fullscreen","|",
+                {
+                name: "save",
+                action: function(editor){
+                    if(editor.value() == originalFileContent) {
+                        console.log("Nothing changed");
+                        return;
+                    }
+
+                    saveFile(currentFilePath,editor.value())
+                },
+                className: "fa fa-save",
+                title: "Save Changes",
+            }],
         });
 
         // Open speicifc file
+        var originalFileContent = null;
+        var currentFilePath = null;
         var openFile = function(path) {
             $.ajax({
                 url: `/page?p=${path}`,
@@ -85,7 +102,26 @@
                     alert('Something went wrong')
                 },
                 success: function(response){
+                    currentFilePath = path;
+                    originalFileContent = response.content;
                     simplemde.value(response.content);
+                }
+            })
+        }
+
+        var saveFile = function(path,content) {
+            $.ajax({
+                url: `/page?p=${path}`,
+                method: "POST",
+                data : {
+                    "content" : content,
+                },
+                error: function(){
+                    alert('Something went wrong')
+                },
+                success: function(response){
+                    originalFileContent = content
+                    alert('Changes you have made has been saved succesfully.');
                 }
             })
         }

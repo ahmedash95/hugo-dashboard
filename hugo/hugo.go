@@ -73,7 +73,7 @@ func loadPages(h *Hugo) {
 			}
 			// the path point to a file not directory
 			// and we should consider it as a file
-			if !f.IsDir() {
+			if !f.IsDir() && strings.Contains(path, ".md") {
 				files = append(files, path)
 				total++
 			}
@@ -134,4 +134,11 @@ func FindPage(s string) (Page, error) {
 		return Page{}, errors.New("Page Not Found")
 	}
 	return c, nil
+}
+
+func (p *Page) UpdateContent(s string) error {
+	p.Content = s
+	content := []byte(s)
+	err := ioutil.WriteFile(p.Path, content, 777)
+	return err
 }
