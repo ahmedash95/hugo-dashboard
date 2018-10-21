@@ -9,6 +9,7 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.5/themes/default/style.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/highlight.js/latest/styles/github.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jquery-contextmenu/2.7.1/jquery.contextMenu.min.css">
     <style>
     .editor-preview,
     .editor-preview-active {
@@ -37,6 +38,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.5/jstree.min.js"></script>
     <script src="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.js"></script>
     <script src="https://cdn.jsdelivr.net/highlight.js/latest/highlight.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/highlight.js/latest/highlight.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-contextmenu/2.7.1/jquery.contextMenu.min.js"></script>
 
 
     <script>
@@ -128,6 +131,76 @@
                 success: function(response){
                     originalFileContent = content
                     alert('Changes you have made has been saved succesfully.');
+                }
+            })
+        }
+
+        $(function() {
+            $.contextMenu({
+                selector: '.jstree-anchor',
+                callback: function(key, options) {
+                    let path = $(this).attr('id').replace('_anchor','').replace(',','/');
+                    if(key == "new-file") {
+                        fname = window.prompt("Enter filename: ")
+                        if(fname != null) {
+                            createFile(path,fname);
+                        }
+                    }
+
+                    if(key == "new-folder") {
+                        fname = window.prompt("Enter directory name: ")
+                        if(fname != null) {
+                            createDir(path,fname);
+                        }
+                    }
+                },
+                items: {
+                    "new-file": {name: "New File", icon: "fa-file"},
+                    "new-folder": {name: "New Directory", icon: "fa-folder"},
+                }
+            });
+        });
+
+        var createFile = function(path,filename){
+            filename = filename.replace(/\s/g,'-');
+            $.ajax({
+                url: `/create/file`,
+                method: "POST",
+                data : {
+                    "path" : `${path}/${filename}.md`,
+                },
+                error: function(){
+                    alert('Something went wrong')
+                },
+                success: function(response){
+                    dirs = path.split("/");
+                    parent = dirs
+                    id = `${path}/${filename}.md`.split('/')
+                    dirTree.push({ "id" : id, "parent" : parent, "text" : `${filename}.md`, "icon" : '#' })
+                    $('#files-tree').jstree(true).settings.core.data = dirTree
+                    $('#files-tree').jstree(true).refresh();
+                }
+            })
+        }
+
+        var createDir = function(path,filename){
+            var directoryName = filename.replace(/\s/g,'-');
+            $.ajax({
+                url: `/create/dir`,
+                method: "POST",
+                data : {
+                    "path" : `${path}/${directoryName}`,
+                },
+                error: function(){
+                    alert('Something went wrong')
+                },
+                success: function(response){
+                    dirs = path.split("/");
+                    parent = dirs
+                    id = `${path}/${directoryName}`.split('/')
+                    dirTree.push({ "id" : id, "parent" : parent, "text" : `${directoryName}`, "icon" : '' })
+                    $('#files-tree').jstree(true).settings.core.data = dirTree
+                    $('#files-tree').jstree(true).refresh();
                 }
             })
         }

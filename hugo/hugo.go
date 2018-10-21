@@ -15,11 +15,12 @@ import (
 )
 
 type Hugo struct {
-	Title   string `json:"title"`
-	Path    string `json:"path"`
-	Theme   string `json:"theme"`
-	BaseURI string `json:"base_uri"`
-	pages   map[string]Page
+	Title       string `json:"title"`
+	Path        string `json:"path"`
+	Theme       string `json:"theme"`
+	BaseURI     string `json:"base_uri"`
+	ContentPath string `json:"content_path"`
+	pages       map[string]Page
 }
 
 type Page struct {
@@ -30,14 +31,11 @@ type Page struct {
 }
 
 var hugoSite *Hugo
-var contentDirectory string
 
 /**
 	Init is responsible to load all date we need for sepcific hugo site
 **/
 func Init(path string, contentDir string) {
-
-	contentDirectory = contentDir
 
 	viper.AddConfigPath(path) // optionally look for config in the working directory
 
@@ -48,17 +46,18 @@ func Init(path string, contentDir string) {
 	}
 
 	hugoSite = &Hugo{
-		Title:   viper.GetString("title"),
-		Path:    path,
-		Theme:   viper.GetString("theme"),
-		BaseURI: viper.GetString("baseurl"),
+		Title:       viper.GetString("title"),
+		Path:        path,
+		Theme:       viper.GetString("theme"),
+		BaseURI:     viper.GetString("baseurl"),
+		ContentPath: path + "/" + contentDir,
 	}
 
 	loadPages(hugoSite)
 }
 
 func loadPages(h *Hugo) {
-	contentPath := h.Path + "/" + contentDirectory
+	contentPath := h.ContentPath
 	var files []string
 	var total int
 	err := filepath.Walk(contentPath,
@@ -120,7 +119,7 @@ func (h *Hugo) GetPages() map[string]Page {
 }
 
 func (h *Hugo) GetPagesTree() []string {
-	basePath := h.Path + "/" + contentDirectory
+	basePath := h.ContentPath
 	var tree []string
 	for _, p := range h.GetPages() {
 		tree = append(tree, strings.Replace(p.Path, basePath, "", 1))

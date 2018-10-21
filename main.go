@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/ahmedash95/hugo-dashboard/hugo"
 	"github.com/gin-gonic/gin"
@@ -34,6 +35,8 @@ func main() {
 	router.GET("/", indexHandler)
 	router.GET("/page", pageHandler)
 	router.POST("/page", savePageHandler)
+	router.POST("/create/file", createFileHandler)
+	router.POST("/create/dir", createDirectoryHandler)
 	router.Run(fmt.Sprintf(":%s", *port))
 }
 
@@ -107,5 +110,52 @@ func savePageHandler(c *gin.Context) {
 
 	c.JSON(200, gin.H{
 		"msg": "changes has been saved succesfully",
+	})
+}
+
+func createFileHandler(c *gin.Context) {
+	path, _ := c.GetPostForm("path")
+	fpath := hugo.Get().ContentPath + "/" + path
+	spath := strings.Split(path, "/")
+	fname := spath[len(spath)-1]
+	f, err := os.Create(fpath)
+
+	if err != nil {
+		c.JSON(422, gin.H{
+			"msg": err,
+		})
+		return
+	}
+
+	defer f.Close()
+
+	hugo.Get().AddPage("/"+path, hugo.Page{
+		Title:   fname,
+		Path:    fpath,
+		Content: "",
+	})
+
+	fmt.Println(hugo.Get().GetPages())
+
+	c.JSON(200, gin.H{
+		"msg": fmt.Sprintf("file has been created to path %s", path),
+	})
+}
+
+func createDirectoryHandler(c *gin.Context) {
+	path, _ := c.GetPostForm("path")
+	fpath := hugo.Get().ContentPath + "/" + path
+
+	err := os.MkdirAll(fpath, 777)
+
+	if err != nil {
+		c.JSON(422, gin.H{
+			"msg": err,
+		})
+		return
+	}
+
+	c.JSON(200, gin.H{
+		"msg": fmt.Sprintf("directory has been created to path %s", path),
 	})
 }
