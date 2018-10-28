@@ -44,6 +44,7 @@
 
     <script>
         var tree = JSON.parse({{.pages_list}})
+        var livePreviewPath = "{{ .live_preview }}"
         var dirTree = []
             ids = [];
         for(let i=0; i < tree.length; i++) {
@@ -87,18 +88,30 @@
             toolbar: [
                 "bold", "italic", "heading", "|", "quote","image","table","|","preview","side-by-side","fullscreen","|",
                 {
-                name: "save",
-                action: function(editor){
-                    if(editor.value() == originalFileContent) {
-                        console.log("Nothing changed");
-                        return;
-                    }
+                    name: "save",
+                    action: function(editor){
+                        if(editor.value() == originalFileContent) {
+                            console.log("Nothing changed");
+                            return;
+                        }
 
-                    saveFile(currentFilePath,editor.value())
+                        saveFile(currentFilePath,editor.value())
+                    },
+                    className: "fa fa-save",
+                    title: "Save Changes",
                 },
-                className: "fa fa-save",
-                title: "Save Changes",
-            }],
+                {
+                    name: "live preview",
+                    action: function(editor){
+                        let v = currentFilePath.split('.')
+                        v.pop()
+                        let path = v.join('.')
+                        window.open(`${livePreviewPath}${path}`,"_blank")
+                    },
+                    className: "fa fa-globe",
+                    title: "Live Preview",
+                }
+            ],
         });
 
         // Open speicifc file
