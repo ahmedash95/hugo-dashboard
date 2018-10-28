@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
 	"strings"
@@ -23,9 +24,6 @@ var livePreviewPath string
 var Hugo *hugo.Hugo
 
 func main() {
-
-	livePreviewPath = "http://localhost:1313/"
-
 	port = flag.String("port", "9999", "Run dashboard of your website on speicifc port")
 	sitePath = flag.String("path", "", "hugo website directory path to serve")
 	contentDir = flag.String("content-dir", "content", "hugo content directory if not content")
@@ -38,6 +36,14 @@ func main() {
 	go runWebsite(*hugoBinPath)
 
 	hugo.Init(*sitePath, *contentDir)
+
+	u, err := url.Parse(hugo.Get().BaseURI)
+	if err != nil {
+		log.Fatal(err)
+	}
+	u.Scheme = "http"
+	u.Host = "localhost:1313"
+	livePreviewPath = u.String()
 
 	router := gin.New()
 	router.LoadHTMLGlob("static/*.tmpl")
